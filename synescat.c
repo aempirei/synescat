@@ -10,6 +10,7 @@
 typedef struct configuration {
     int numeric_markup;
     int alpha_markup;
+    int wide_markup;
     int dynamic_mode;
     int compression_mode;
     const char *locale;
@@ -23,6 +24,7 @@ static void usage(const char *arg0) {
     fprintf(stderr, "\t%*s%*s\n", option_width, "-h", desc_width, "show this help");
     fprintf(stderr, "\t%*s%*s\n", option_width, "-n", desc_width, "numeric markup");
     fprintf(stderr, "\t%*s%*s\n", option_width, "-a", desc_width, "alpha markup");
+    fprintf(stderr, "\t%*s%*s\n", option_width, "-w", desc_width, "wide markup");
     fprintf(stderr, "\t%*s%*s\n", option_width, "-d", desc_width, "dynamic mode");
     fprintf(stderr, "\t%*s%*s\n", option_width, "-c", desc_width, "compression mode");
     fprintf(stderr, "\t%*s%*s\n", option_width, "-l locale", desc_width, "use specified locale string");
@@ -34,6 +36,7 @@ void cliconfig(configuration_t * config, int argc, char **argv) {
     const configuration_t default_config = {
         .numeric_markup = 0,
         .alpha_markup = 0,
+        .wide_markup = 0,
         .dynamic_mode = 0,
         .compression_mode = 0,
         .locale = ""
@@ -45,7 +48,7 @@ void cliconfig(configuration_t * config, int argc, char **argv) {
 
     opterr = 0;
 
-    while ((opt = getopt(argc, argv, "hdcnavl:")) != -1) {
+    while ((opt = getopt(argc, argv, "hdcnawvl:")) != -1) {
         switch (opt) {
             /*
                case 'd':
@@ -60,6 +63,9 @@ void cliconfig(configuration_t * config, int argc, char **argv) {
             break;
         case 'a':
             config->alpha_markup = 1;
+            break;
+        case 'w':
+            config->wide_markup = 1;
             break;
         case 'l':
             config->locale = optarg;
@@ -79,9 +85,35 @@ void cliconfig(configuration_t * config, int argc, char **argv) {
     }
 }
 
+int print_eilseq(int ch, FILE * fp) {
+    return fwprintf(fp, L"\33[46;31m\\x%02x\33[0m", ch);
+}
+
+int print_wide(int ch, FILE * fp) {
+    return fwprintf(fp, L"\33[1;31m%lc\33[0m", ch);
+}
+
+int print_numeric(wint_t ch, FILE * fp) {
+    int value = ch - L'0';
+    const int codea[] = { 30, 37, 37, 31, 34, 36, 32, 35, 34, 31 };
+    const int codeb[] = { 1, 0, 1, 0, 1, 0, 0, 0, 0, 1 };
+    return fwprintf(fp, L"\33[%d;%dm%lc\33[0m", codeb[value], codea[value], ch);
+}
+
+int print_alpha(wint_t ch, FILE * fp) {
+	const int code0[] = {  0,  0,  0,  0,  1,  1,  1 };
+	const int codea[] = { 33, 35, 36, 30, 33, 35, 36 };
+	const int codeb[] = { 41, 42, 44, 47 };
+	wint_t value = towlower(ch) - L'a';
+	wint_t bdiv = value / 7;
+	wint_t amod = value % 7;
+	return fwprintf(fp, L"\33[%d;%d;%dm%lc\33[0m", code0[amod], codea[amod], codeb[bdiv], ch);
+}
+
 void synescat(configuration_t * config, FILE * fpin, FILE * fpout) {
 
-    wint_t ch;
+    wint_t wch;
+    int ch;
 
     if (setlocale(LC_CTYPE, config->locale) == NULL) {
         fprintf(stderr, "failed to set locale LC_CTYPE=\"%s\"\n", config->locale);
@@ -90,27 +122,35 @@ void synescat(configuration_t * config, FILE * fpin, FILE * fpout) {
 
     for (;;) {
 
-        ch = fgetwc(fpin);
+        wch = fgetwc(fpin);
 
-        if (ch == WEOF) {
+        if (wch == WEOF) {
             if (feof(fpin)) {
                 break;
             } else if (errno == EILSEQ) {
-                ch = fgetc(fpin);
-                printf("\\x%02x", ch);
+                if ((ch = fgetc(fpin)) == EOF) {
+                    if (feof(fpin)) {
+                        break;
+                    } else {
+                        perror("fgetc()");
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                print_eilseq(ch, fpout);
             } else {
                 perror("fgetwc()");
                 exit(EXIT_FAILURE);
             }
         } else {
 
-            if (config->numeric_markup) {
-            }
-            if (config->alpha_markup) {
-            }
-
-				if (fputwc(ch, fpout) == WEOF) {
-					fprintf(stderr, "fputwc(0x%02x,...)", ch);
+            if (config->numeric_markup && iswdigit(wch)) {
+                print_numeric(wch, fpout);
+            } else if (config->alpha_markup && iswalpha(wch)) {
+                print_alpha(wch, fpout);
+            } else if (config->wide_markup && wch > 255) {
+                print_wide(wch, fpout);
+            } else if (fputwc(wch, fpout) == WEOF) {
+                fprintf(stderr, "fputwc(0x%02x,...)", wch);
                 perror("");
                 exit(EXIT_FAILURE);
             }
