@@ -101,13 +101,8 @@ int print_numeric(wint_t ch, FILE * fp) {
 }
 
 int print_alpha(wint_t ch, FILE * fp) {
-	const int code0[] = {  0,  0,  0,  0,  1,  1,  1 };
-	const int codea[] = { 33, 35, 36, 30, 33, 35, 36 };
-	const int codeb[] = { 41, 42, 44, 47 };
 	wint_t value = towlower(ch) - L'a';
-	wint_t bdiv = value / 7;
-	wint_t amod = value % 7;
-	return fwprintf(fp, L"\33[%d;%d;%dm%lc\33[0m", code0[amod], codea[amod], codeb[bdiv], ch);
+	return fwprintf(fp, L"\33[%d;%dm%lc\33[0m", (value / 6) & 1, 31 + (value % 6), ch);
 }
 
 void synescat(configuration_t * config, FILE * fpin, FILE * fpout) {
