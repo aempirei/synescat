@@ -101,8 +101,9 @@ int print_numeric(wint_t ch, FILE * fp) {
 }
 
 int print_alpha(wint_t ch, FILE * fp) {
-	wint_t value = towlower(ch) - L'a';
-	return fwprintf(fp, L"\33[%d;%dm%lc\33[0m", (value / 6) & 1, 31 + (value % 6), ch);
+    wint_t value = towlower(ch) - L'a';
+
+    return fwprintf(fp, L"\33[%d;%dm%lc\33[0m", (value / 6) & 1, 31 + (value % 6), ch);
 }
 
 void synescat(configuration_t * config, FILE * fpin, FILE * fpout) {
