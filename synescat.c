@@ -1,3 +1,13 @@
+/* synescat
+ * Synesthesia "cat" Command
+ * Copyright(c) 2012 by Christopher Abad | 20 GOTO 10
+ *
+ * email: aempirei@gmail.com aempirei@256.bz
+ * http://www.256.bz/ http://www.twentygoto10.com/
+ * git: git@github.com:aempirei/synescat.git
+ * aim: ambientempire
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
