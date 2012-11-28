@@ -6,3 +6,7 @@ email: aempirei@gmail.com aempirei@256.bz
 http://www.256.bz/ http://www.twentygoto10.com/
 git: git@github.com:aempirei/synescat.git
 aim: ambientempire
+
+a simple 'cat' program that consistently colors
+numbers in text for console display. color markup
+is done via ANSI color codes.
