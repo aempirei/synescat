@@ -119,8 +119,8 @@ int print_wide(int ch, FILE * fp) {
 
 int print_numeric(wint_t ch, FILE * fp) {
     int value = ch - L'0';
-    const int codea[] = { 30, 37, 37, 31, 34, 36, 32, 35, 34, 31 };
-    const int codeb[] = { 1, 0, 1, 0, 1, 0, 0, 0, 0, 1 };
+    const int codea[] = { 30, 37, 36, 31, 34, 33, 32, 35, 34, 31 };
+    const int codeb[] = { 01, 01, 01, 00, 01, 01, 00, 00, 00, 01 };
     return fwprintf(fp, L"\33[%d;%dm%lc\33[0m", codeb[value], codea[value], ch);
 }
 
