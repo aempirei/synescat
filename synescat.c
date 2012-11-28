@@ -16,6 +16,7 @@
 #include <locale.h>
 #include <wchar.h>
 #include <wctype.h>
+#include <stdarg.h>
 
 typedef struct configuration {
     int numeric_markup;
@@ -26,31 +27,42 @@ typedef struct configuration {
     const char *locale;
 } configuration_t;
 
-static void usage(const char *arg0) {
-    const int option_width = -11;
-    const int desc_width = -40;
+const configuration_t default_config = {
+    .numeric_markup = 1,
+    .alpha_markup = 0,
+    .wide_markup = 0,
+    .dynamic_mode = 0,
+    .compression_mode = 0,
+    .locale = ""
+};
 
-    fprintf(stderr, "\nusage: %s [options] < inputfile\n\n", arg0);
-    fprintf(stderr, "\t%*s%*s\n", option_width, "-h", desc_width, "show this help");
-    fprintf(stderr, "\t%*s%*s\n", option_width, "-n", desc_width, "numeric markup");
-    fprintf(stderr, "\t%*s%*s\n", option_width, "-a", desc_width, "alpha markup");
-    fprintf(stderr, "\t%*s%*s\n", option_width, "-w", desc_width, "wide markup");
-    fprintf(stderr, "\t%*s%*s\n", option_width, "-d", desc_width, "dynamic mode");
-    fprintf(stderr, "\t%*s%*s\n", option_width, "-c", desc_width, "compression mode");
-    fprintf(stderr, "\t%*s%*s\n", option_width, "-l locale", desc_width, "use specified locale string");
+const char *default_action(int default_value) {
+    return default_value ? "disable" : "enable";
+}
+
+void usage_print(const char *option_str, const char *action, const char *option_desc) {
+
+    const int option_width = -11;
+
+    fprintf(stderr, "\t%*s%s %s\n", option_width, option_str, action, option_desc);
+}
+
+void usage(const char *arg0) {
+
+    fprintf(stderr, "\nusage: %s [options] [file]...\n\n", arg0);
+
+    usage_print("-h", "show", "this help");
+    usage_print("-n", default_action(default_config.numeric_markup), "numeric markup");
+    usage_print("-a", default_action(default_config.alpha_markup), "alpha markup");
+    usage_print("-w", default_action(default_config.wide_markup), "wide markup");
+    usage_print("-d", default_action(default_config.dynamic_mode), "dynamic mode");
+    usage_print("-c", default_action(default_config.compression_mode), "compression mode");
+    usage_print("-l locale", "use", "specified locale string");
+
     fputc('\n', stderr);
 }
 
-void cliconfig(configuration_t * config, int argc, char **argv) {
-
-    const configuration_t default_config = {
-        .numeric_markup = 0,
-        .alpha_markup = 0,
-        .wide_markup = 0,
-        .dynamic_mode = 0,
-        .compression_mode = 0,
-        .locale = ""
-    };
+int cliconfig(configuration_t * config, int argc, char **argv) {
 
     int opt;
 
@@ -62,20 +74,20 @@ void cliconfig(configuration_t * config, int argc, char **argv) {
         switch (opt) {
             /*
                case 'd':
-               config->dynamic_mode = 1;
+               config->dynamic_mode = !default_config.dynamic_mode;
                break;
                case 'c':
-               config->compression_mode = 1;
+               config->compression_mode = !default_config.compression_mode;
                break;
              */
         case 'n':
-            config->numeric_markup = 1;
+            config->numeric_markup = !default_config.numeric_markup;
             break;
         case 'a':
-            config->alpha_markup = 1;
+            config->alpha_markup = !default_config.alpha_markup;
             break;
         case 'w':
-            config->wide_markup = 1;
+            config->wide_markup = !default_config.wide_markup;
             break;
         case 'l':
             config->locale = optarg;
@@ -93,6 +105,8 @@ void cliconfig(configuration_t * config, int argc, char **argv) {
             exit(EXIT_FAILURE);
         }
     }
+
+    return optind;
 }
 
 int print_eilseq(int ch, FILE * fp) {
@@ -165,13 +179,45 @@ void synescat(configuration_t * config, FILE * fpin, FILE * fpout) {
 
 }
 
+void eprintf(int errnum, const char *format, ...) {
+
+    va_list ap;
+    char eb[256];
+    char s[256];
+
+    if (strerror_r(errnum, eb, sizeof(eb)) == -1) {
+        perror("strerror_r()");
+        return;
+    }
+
+    va_start(ap, format);
+    vsnprintf(s, sizeof(s), format, ap);
+    va_end(ap);
+
+    fprintf(stderr, "%s: %s\n", s, eb);
+}
+
 int main(int argc, char **argv) {
 
+    const char fopen_mode[] = "r";
+
     configuration_t config;
+    FILE *fp;
 
-    cliconfig(&config, argc, argv);
+    int files_index = cliconfig(&config, argc, argv);
 
-    synescat(&config, stdin, stdout);
+    if (files_index == argc) {
+        synescat(&config, stdin, stdout);
+    } else {
+        for (int i = files_index; i < argc; i++) {
+            if ((fp = fopen(argv[i], fopen_mode)) == NULL) {
+                eprintf(errno, "fopen(\"%s\",\"%s\")", argv[i], fopen_mode);
+            } else {
+                synescat(&config, fp, stdout);
+                fclose(fp);
+            }
+        }
+    }
 
     exit(EXIT_SUCCESS);
 }
