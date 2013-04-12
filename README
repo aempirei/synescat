@@ -10,3 +10,5 @@ aim: ambientempire
 a simple 'cat' program that consistently colors
 numbers in text for console display. color markup
 is done via ANSI color codes.
+
+also now includes brailecat! lol.
