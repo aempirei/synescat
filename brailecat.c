@@ -1,5 +1,6 @@
 /* brailecat
- * Synesthesia "cat" Command
+ * Braile "cat" Command
+ * Use the 8 braile dot positions as bit on/off indicators
  * Copyright(c) 2012 by Christopher Abad | 20 GOTO 10
  *
  * email: aempirei@gmail.com aempirei@256.bz
