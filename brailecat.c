@@ -1,6 +1,7 @@
 /* brailecat
  * Braile "cat" Command
  * Use the 8 braile dot positions as bit on/off indicators
+ * use any flag to only braile encode non-printables
  * Copyright(c) 2012 by Christopher Abad | 20 GOTO 10
  *
  * email: aempirei@gmail.com aempirei@256.bz
@@ -17,6 +18,7 @@
 #include <locale.h>
 #include <wchar.h>
 #include <wctype.h>
+#include <ctype.h>
 #include <stdarg.h>
 
 wint_t putbrailebyte(int ch, FILE *fp) {
@@ -26,16 +28,22 @@ wint_t putbrailebyte(int ch, FILE *fp) {
 	return fputwc(wch + ch, fp);
 }
 
-void brailecat(FILE * fpin, FILE * fpout) {
+void brailecat(FILE * fpin, FILE * fpout, int all) {
 
 	const char *dfl_locale = "";
+	int ch;
 
 	if (setlocale(LC_CTYPE, dfl_locale) == NULL) {
 		fprintf(stderr, "failed to set locale LC_CTYPE=\"%s\"\n", dfl_locale);
 		exit(EXIT_FAILURE);
 	}
 
-	while(putbrailebyte(fgetc(fpin), fpout) != WEOF) { /* do nothing */ }
+	while((ch = fgetc(fpin)) != EOF) {
+		if(all || !isprint(ch)) 
+			putbrailebyte(ch, fpout);
+		else
+			fputwc(ch, fpout);
+	}
 
 	if (!feof(fpin)) {
 		perror("fgetc()");
@@ -43,7 +51,15 @@ void brailecat(FILE * fpin, FILE * fpout) {
 	}
 }
 
-int main() {
-	brailecat(stdin, stdout);
+int main(int argc, char **argv) {
+	int all = 1;
+	if(argc > 1 && *argv[1] == '-') {
+		/* 
+		   who cares what flag you pass, if theres one consider it
+		   the 'only braileify non-printables' option
+		 */
+		all = 0;
+	}
+	brailecat(stdin, stdout, all);
 	exit(EXIT_SUCCESS);
 }
