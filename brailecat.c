@@ -6,7 +6,7 @@
  *
  * email: aempirei@gmail.com aempirei@256.bz
  * http://www.256.bz/ http://www.twentygoto10.com/
- * git: git@github.com:aempirei/brailecat.git
+ * git: git@github.com:aempirei/synescat.git
  * aim: ambientempire
  */
 
