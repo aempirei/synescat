@@ -2,7 +2,7 @@
  * Braile "cat" Command
  * Use the 8 braile dot positions as bit on/off indicators
  * use any flag to only braile encode non-printables
- * Copyright(c) 2012 by Christopher Abad | 20 GOTO 10
+ * Copyright(c) 2013 by Christopher Abad | 20 GOTO 10
  *
  * email: aempirei@gmail.com aempirei@256.bz
  * http://www.256.bz/ http://www.twentygoto10.com/
