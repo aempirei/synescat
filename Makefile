@@ -20,10 +20,7 @@ install: $(PROGRAMS)
 	install $(PROGRAMS) -m755 $(INSTALL_PATH)
 
 clean:
-	rm -f *.o *~
-
-wipe: clean
-	rm -f $(PROGRAMS)
+	rm -f *.o *~ $(PROGRAMS)
 
 tidy:
 	indent $(INDENTFLAGS) *.c
