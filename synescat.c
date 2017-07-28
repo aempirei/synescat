@@ -24,6 +24,7 @@ typedef struct configuration {
     int wide_markup;
     int dynamic_mode;
     int compression_mode;
+	int disable_buffering;
     const char *locale;
 } configuration_t;
 
@@ -33,6 +34,7 @@ const configuration_t default_config = {
     .wide_markup = 0,
     .dynamic_mode = 0,
     .compression_mode = 0,
+	.disable_buffering = 0,
     .locale = ""
 };
 
@@ -57,6 +59,7 @@ void usage(const char *arg0) {
     usage_print("-w", default_action(default_config.wide_markup), "wide markup");
     usage_print("-d", default_action(default_config.dynamic_mode), "dynamic mode");
     usage_print("-c", default_action(default_config.compression_mode), "compression mode");
+	usage_print("-0", default_action(default_config.disable_buffering), "disable buffering");
     usage_print("-l locale", "use", "specified locale string");
 
     fputc('\n', stderr);
@@ -70,7 +73,7 @@ int cliconfig(configuration_t * config, int argc, char **argv) {
 
     opterr = 0;
 
-    while ((opt = getopt(argc, argv, "hdcnawvl:")) != -1) {
+    while ((opt = getopt(argc, argv, "hdcnawvb0l:")) != -1) {
         switch (opt) {
             /*
                case 'd':
@@ -89,6 +92,9 @@ int cliconfig(configuration_t * config, int argc, char **argv) {
         case 'w':
             config->wide_markup = !default_config.wide_markup;
             break;
+		case '0':
+			config->disable_buffering = !default_config.disable_buffering;
+			break;
         case 'l':
             config->locale = optarg;
             break;
@@ -139,6 +145,11 @@ void synescat(configuration_t * config, FILE * fpin, FILE * fpout) {
         fprintf(stderr, "failed to set locale LC_CTYPE=\"%s\"\n", config->locale);
         exit(EXIT_FAILURE);
     }
+
+	if(config->disable_buffering) {
+		setvbuf(fpin, NULL, _IONBF, 0);
+		setvbuf(fpout, NULL, _IONBF, 0);
+	}
 
     for (;;) {
 
