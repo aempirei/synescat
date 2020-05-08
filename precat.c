@@ -11,10 +11,10 @@ int main(int argc, char **argv) {
 		if(fp != NULL) {
 			char ch;
 			put(argv[i]);
-			while((ch = getchar()) != EOF) {
+			while((ch = fgetc(fp)) != EOF) {
+				fputc(ch, stdout);
 				if(ch == '\n')
 					put(argv[i]);
-				fputc(ch, stdout);
 			}
 			fclose(fp);
 		}
