@@ -1,19 +1,16 @@
 CC = gcc
 CCFLAGS = -Wall -W -w
-CFLAGS = -Wall -W -I. -pedantic -std=gnu99
+CFLAGS = -Wall -W -I. -pedantic -std=gnu18
 LIBFLAGS =
-PROGRAMS = synescat brailecat
+PROGRAMS = synescat brailecat precat
 INSTALL_PATH = /usr/local/bin
 INDENTFLAGS = -i4 -br -ce -nprs -nbfda -npcs -ncs -sob -brf -nut -bap -bad -npsl -l140
 
-.PHONY: all clean wipe tidy
+.PHONY: all clean tidy
 
 all: $(PROGRAMS)
 
-synescat: synescat.o
-	$(CC) $(CCFLAGS) -o $@ $^ $(LIBFLAGS)
-
-brailecat: brailecat.o
+$(PROGRAMS): %: %.o
 	$(CC) $(CCFLAGS) -o $@ $^ $(LIBFLAGS)
 
 install: $(PROGRAMS)
