@@ -21,6 +21,8 @@
 #include <ctype.h>
 #include <stdarg.h>
 
+typedef wint_t F(int,FILE*);
+
 wint_t putbrailebyte(int ch, FILE *fp) {
 	const wint_t wch = 0x2800;
 	if(ch == EOF)
@@ -28,9 +30,11 @@ wint_t putbrailebyte(int ch, FILE *fp) {
 	return fputwc(wch + ch, fp);
 }
 
-void brailecat(FILE * fpin, FILE * fpout, int all) {
+void brailecat(FILE * fpin, FILE * fpout, int tri) {
 
 	const char *dfl_locale = "";
+	F*const _ff[] = { putbrailebyte, putbrailebyte, fputwc };
+	F*const *ff = _ff + 1;
 	int ch;
 
 	if (setlocale(LC_CTYPE, dfl_locale) == NULL) {
@@ -38,12 +42,8 @@ void brailecat(FILE * fpin, FILE * fpout, int all) {
 		exit(EXIT_FAILURE);
 	}
 
-	while((ch = fgetc(fpin)) != EOF) {
-		if(all || !isprint(ch)) 
-			putbrailebyte(ch, fpout);
-		else
-			fputwc(ch, fpout);
-	}
+	while((ch = fgetc(fpin)) != EOF)
+		(ff[isprint(ch) ? tri : -tri])(ch,fpout);
 
 	if (!feof(fpin)) {
 		perror("fgetc()");
@@ -52,14 +52,7 @@ void brailecat(FILE * fpin, FILE * fpout, int all) {
 }
 
 int main(int argc, char **argv) {
-	int all = 1;
-	if(argc > 1 && *argv[1] == '-') {
-		/* 
-		   who cares what flag you pass, if theres one consider it
-		   the 'only braileify non-printables' option
-		 */
-		all = 0;
-	}
-	brailecat(stdin, stdout, all);
+	int tri = (argc < 2) ? 0 : *argv[1] == '-' ? -1 : *argv[1] == '+' ? +1 : 0;
+	brailecat(stdin, stdout, tri);
 	exit(EXIT_SUCCESS);
 }
