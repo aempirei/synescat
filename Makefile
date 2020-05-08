@@ -1,6 +1,6 @@
 CC = gcc
-CCFLAGS = -Wall -W -w
-CFLAGS = -Wall -W -I. -pedantic -std=gnu18
+CCFLAGS = -Wall -W -w -O3
+CFLAGS = -Wall -W -I. -pedantic -std=gnu18 -O3
 LIBFLAGS =
 PROGRAMS = synescat brailecat precat
 INSTALL_PATH = /usr/local/bin
